@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, parse } from 'node:path';
+import { Registry, FileStore } from '../src/registry.mjs';
+test('first start sticks, explicit reassignment increments revision and survives restart',async()=>{
+  const workspace=await mkdtemp(join(tmpdir(),'bridge-project-'));
+  const store=new FileStore(join(workspace,'registry.json'),{projects:{}});
+  const r=new Registry(store); await r.init();
+  const a=await r.start({project:'app',workspace,agent:'codex',sessionId:'chat1'});
+  assert.equal(a.orchestrator.agent,'codex');
+  const b=await r.start({project:'app',workspace,agent:'opencode',sessionId:'ses2'});
+  assert.equal(b.orchestrator.sessionId,'chat1');
+  await r.assign({project:'app',agent:'opencode',sessionId:'ses2'});
+  const restored=new Registry(store);await restored.init();
+  assert.equal(restored.get('app').orchestrator.agent,'opencode');
+  assert.equal(restored.get('app').orchestrator.revision,2);
+  await assert.rejects(r.start({project:'app',workspace:parse(workspace).root,agent:'codex'}),/root/);
+});

@@ -1,0 +1,11 @@
+{
+  "kanzoUrl": "http://localhost:4242/#all",
+  "pollIntervalMs": 3000,
+  "dryRun": false,
+  "accessMode": "scoped",
+  "openCodeAuth": "password",
+  "model": {
+    "providerID": "",
+    "modelID": ""
+  }
+}

@@ -1,0 +1,10 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { readFile } from 'node:fs/promises';
+import { packagedCodex } from '../src/codex-runtime.mjs';
+const config=JSON.parse(await readFile(new URL('../bridge.config.json',import.meta.url),'utf8'));
+const bundled=packagedCodex();
+const command=config.codexCommand||bundled.command;
+const prefix=config.codexPrefixArgs??(config.codexCommand?[]:bundled.prefixArgs);
+await promisify(execFile)(command,[...prefix,'app-server','daemon','start'],{windowsHide:true,env:command===bundled.command?{...process.env,...bundled.env}:process.env,timeout:30000,maxBuffer:128000});
+console.log('Codex daemon is available.');

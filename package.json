@@ -1,0 +1,22 @@
+{
+  "name": "kanzo-bridge",
+  "version": "2.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "start": "node src/server.mjs",
+    "check": "node scripts/check.mjs",
+    "bridge": "node scripts/bridge.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@openai/codex": "0.169.0",
+    "opencode-ai": "1.19.5",
+    "zod": "4.6.7"
+  }
+}

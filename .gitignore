@@ -1,0 +1,6 @@
+node_modules/
+.state/
+*.log
+bridge.config.json
+.env
+.env.*
