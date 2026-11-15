@@ -5,7 +5,7 @@ AgentDispatch connects a local Kanzo board to Codex and OpenCode on Windows. Eac
 ## Requirements
 
 - Windows x64, Node.js 24 or later, and PowerShell 7.
-- A running Kanzo board on the same machine. The default is `http://localhost:4242/#all`.
+- A running Kanzo board on the same machine. The default is `http://localhost:4242/#all`. See [Kanzo's installation guide](https://github.com/emanuele-em/kanzo#install).
 - A working Codex login and an OpenCode account with access to your chosen model. Authenticate in the respective apps. Keep provider credentials in the apps' own configuration.
 
 ## Install
@@ -65,6 +65,10 @@ npm run check
 ```
 
 To run from the checkout, copy `bridge.config.example.json` to `bridge.config.json`, complete the model settings, and run `node .\scripts\bridge.mjs start`. The test suite includes a fresh installation into a temporary directory.
+
+## Attribution
+
+AgentDispatch uses Kanzo for its task board and task API. Thanks to `emanuele-em` and the Kanzo contributors. [Upstream Kanzo repository](https://github.com/emanuele-em/kanzo)
 
 ## License
 
