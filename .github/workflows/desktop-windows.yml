@@ -1,0 +1,60 @@
+name: AgentDispatch for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['desktop-v*']
+
+jobs:
+  windows-x64:
+    runs-on: windows-latest
+    timeout-minutes: 50
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Select Rust stable
+        run: rustup default stable-x86_64-pc-windows-msvc
+      - name: Verify the bridge
+        run: |
+          npm ci --ignore-scripts
+          npm test
+          npm run check
+          node --check desktop/main.mjs
+      - name: Build Windows installer
+        run: npm exec --yes --package=@tauri-apps/cli@2 -- tauri build --bundles nsis
+      - name: Verify installer and bridge resources
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          if (-not $setup) { throw 'The NSIS installer is missing.' }
+          $destination = Join-Path $env:RUNNER_TEMP 'AgentDispatchDesktop'
+          $process = Start-Process -FilePath $setup.FullName -ArgumentList "/S /D=$destination" -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "NSIS installer returned $($process.ExitCode)." }
+          $launcher = Join-Path $destination 'AgentDispatch.exe'
+          $adapter = Join-Path $destination 'bridge/scripts/desktop.mjs'
+          foreach ($file in @($launcher, $adapter, (Join-Path $destination 'bridge/package-lock.json'))) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Installed file missing: $file" }
+          }
+          $bridge = Join-Path $env:RUNNER_TEMP 'AgentDispatchBridge'
+          $request = @{action='install';root=$bridge;input=@{}} | ConvertTo-Json -Compress
+          $request | node $adapter
+          if ($LASTEXITCODE -ne 0) { throw 'The bundled bridge installer failed.' }
+      - uses: actions/upload-artifact@v6
+        with:
+          name: AgentDispatch-Windows-x64
+          path: src-tauri/target/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $setup = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          gh release create $env:GITHUB_REF_NAME $setup.FullName --verify-tag --title 'AgentDispatch Desktop 0.1.0' --notes 'Windows x64 desktop app for submitting Kanzo goals. Requires Node.js 24 x64. PowerShell 7 is used in the background for first-time bridge setup. The installer is unsigned.'

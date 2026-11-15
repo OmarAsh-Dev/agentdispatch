@@ -8,7 +8,18 @@ AgentDispatch connects a local Kanzo board to Codex and OpenCode on Windows. Eac
 - A running Kanzo board on the same machine. The default is `http://localhost:4242/#all`. See [Kanzo's installation guide](https://github.com/emanuele-em/kanzo#install).
 - A working Codex login and an OpenCode account with access to your chosen model. Authenticate in the respective apps. Keep provider credentials in the apps' own configuration.
 
-## Install
+## Install the Windows desktop app
+
+Download the Windows x64 setup executable from [GitHub Releases](https://github.com/OmarAsh-Dev/agentdispatch/releases). Install Node.js 24 x64 and PowerShell 7, then run the setup executable and open **AgentDispatch Desktop** from Start. PowerShell runs in the background during initial bridge installation.
+
+1. Under **Setup → Bridge installation**, click **Install bridge**. If you already have an AgentDispatch or Kanzo Bridge installation, enter its folder and click **Use folder** to keep its settings, registrations, and goals.
+2. For a fresh bridge, enter the provider and model IDs you use in OpenCode, then click **Save model** and **Start bridge**. Keep Kanzo running on the same PC.
+3. If the project list is empty, expand **Register a project**. Enter the Kanzo project slug, its actual folder, and its orchestrator.
+4. Select the project, write your goal, and click **Submit goal**. Watch for the planned cards in Kanzo. Use **Refresh** to update recent goal states.
+
+The desktop setup is unsigned. The [Tauri Windows build instructions](https://v2.tauri.app/distribute/windows-installer/) describe how to build it from source with `npm exec --package=@tauri-apps/cli@2 -- tauri build --bundles nsis`.
+
+## Install the bridge from a source checkout
 
 Download the source ZIP or clone the repository. In PowerShell 7, open the extracted source directory and run:
 

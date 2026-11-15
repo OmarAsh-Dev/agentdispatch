@@ -1,0 +1,12 @@
+[package]
+name = "agentdispatch-desktop"
+version = "0.1.0"
+description = "Submit and monitor AgentDispatch goals from Windows"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = "2"
+
+[dependencies]
+tauri = "2"
+serde_json = "1"

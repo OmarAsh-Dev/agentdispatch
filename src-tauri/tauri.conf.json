@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AgentDispatch Desktop",
+  "mainBinaryName": "AgentDispatch",
+  "version": "0.1.0",
+  "identifier": "com.agentdispatch.desktop",
+  "build": { "frontendDist": "../desktop" },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      { "label": "main", "title": "AgentDispatch", "width": 980, "height": 760, "minWidth": 660, "minHeight": 500 }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico"],
+    "resources": {
+      "../.npmrc": "bridge/.npmrc",
+      "../.gitignore": "bridge/.gitignore",
+      "../package.json": "bridge/package.json",
+      "../package-lock.json": "bridge/package-lock.json",
+      "../bridge.config.example.json": "bridge/bridge.config.example.json",
+      "../README.md": "bridge/README.md",
+      "../LICENSE": "bridge/LICENSE",
+      "../scripts/": "bridge/scripts/",
+      "../src/": "bridge/src/",
+      "../tests/": "bridge/tests/"
+    },
+    "windows": { "nsis": { "installMode": "currentUser" } }
+  }
+}

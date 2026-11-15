@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentDispatch</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="main.mjs"></script>
+</head>
+<body>
+  <main>
+    <header class="header">
+      <div><h1>AgentDispatch</h1><p>Send a goal to your Kanzo orchestrator.</p></div>
+      <div class="connection"><span id="connection">Checking bridge…</span><button id="refresh" type="button" class="secondary">Refresh</button></div>
+    </header>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <section class="card">
+      <h2>New goal</h2>
+      <form id="goal-form">
+        <label for="project">Kanzo project</label>
+        <select id="project" required></select>
+        <p id="workspace" class="hint"></p>
+        <label for="goal">What should the agents build?</label>
+        <textarea id="goal" rows="5" maxlength="30000" required placeholder="Describe the outcome and how to check it."></textarea>
+        <div class="actions"><button id="submit" type="submit">Submit goal</button></div>
+      </form>
+    </section>
+    <div class="lower">
+      <section class="card">
+        <h2>Recent goals</h2>
+        <ul id="history"></ul>
+      </section>
+      <section class="card">
+        <h2>Setup</h2>
+        <details id="installation">
+          <summary>Bridge installation</summary>
+          <label for="root">Installation folder</label>
+          <input id="root" spellcheck="false" placeholder="C:\path\to\AgentDispatch">
+          <div class="actions">
+            <button id="use-root" type="button" class="secondary">Use folder</button>
+            <button id="install" type="button" class="secondary">Install bridge</button>
+            <button id="start" type="button" class="secondary">Start bridge</button>
+          </div>
+          <form id="model-form">
+            <label for="provider">OpenCode provider ID</label>
+            <input id="provider" required spellcheck="false">
+            <label for="model">OpenCode model ID</label>
+            <input id="model" required spellcheck="false">
+            <button type="submit" class="secondary">Save model</button>
+          </form>
+        </details>
+        <details id="project-setup">
+          <summary>Register a project</summary>
+          <form id="project-form">
+            <label for="slug">Existing Kanzo project slug</label>
+            <input id="slug" required pattern="[a-z0-9][a-z0-9\-]{0,63}" spellcheck="false" placeholder="pdfeditor">
+            <label for="folder">Workspace folder</label>
+            <input id="folder" required spellcheck="false" placeholder="D:\Projects\pdfeditor">
+            <label for="agent">Orchestrator</label>
+            <select id="agent"><option value="codex">Codex</option><option value="opencode">OpenCode</option></select>
+            <p class="hint">Registration can start cards already marked Todo or ready.</p>
+            <button type="submit" class="secondary">Register project</button>
+          </form>
+        </details>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

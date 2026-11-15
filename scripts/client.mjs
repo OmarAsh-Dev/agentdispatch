@@ -9,9 +9,15 @@ const runtime = JSON.parse(await readFile(resolve(root, '.state/runtime.json'), 
 const [name = 'opencode_health', argumentFile] = process.argv.slice(2);
 const args = argumentFile ? JSON.parse(await readFile(resolve(argumentFile), 'utf8')) : {};
 const client = new Client({ name: 'codex-bridge-cli', version: '1.0.0' });
+const transport = new StreamableHTTPClientTransport(new URL(runtime.bridgeUrl), {
+  requestInit: { headers: { authorization: `Bearer ${runtime.bridgeToken}` } },
+});
 try {
-  await client.connect(new StreamableHTTPClientTransport(new URL(runtime.bridgeUrl), { requestInit: { headers: { authorization: `Bearer ${runtime.bridgeToken}` } } }));
+  await client.connect(transport);
   const result = await client.callTool({ name, arguments: args }, undefined, { timeout: 65000 });
   for (const content of result.content) if (content.type === 'text') console.log(content.text);
   process.exitCode = result.isError ? 1 : 0;
-} finally { await client.close(); }
+} finally {
+  await transport.terminateSession().catch(() => {});
+  await client.close();
+}
