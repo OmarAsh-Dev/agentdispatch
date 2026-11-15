@@ -138,20 +138,25 @@ export class Controller {
     }else if(job.mode==='implementation'){
       await this.board.comment(job.taskId,`Implementation report (${job.agent}, session ${job.sessionId}):\n${safe(JSON.stringify(result,null,2))}\nIndependent review pending.`, `result-${job.id}`);
       if(task.status==='doing')await this.board.update(job.taskId,{status:'review'});
-      job.implementation=result;job.humanReview=needsHuman(task)||result.needsHumanReview||!result.completed;
+      job.implementation=result;job.humanReview=needsHuman(task);
       const after=await snapshotFiles(job.workspace),before=job.filesBefore||{};
       job.reviewPaths=[...new Set([...Object.keys(before),...Object.keys(after)])].filter(path=>before[path]!==after[path]);
       if(!job.reviewPaths.length)job.reviewPaths=null;
-      job.codeFingerprint=await this.fingerprint(job.workspace,job.reviewPaths);job.reviewPending=!job.humanReview;
-      this.enqueueNotification(job.project,`${job.taskId} implementation finished; status Review. ${result.summary}${job.humanReview?' Human review required.':''}`,`implementation-${job.id}`);
+      job.codeFingerprint=await this.fingerprint(job.workspace,job.reviewPaths);job.reviewPending=true;
+      this.enqueueNotification(job.project,`${job.taskId} implementation finished; independent review queued. ${result.summary}${job.humanReview?' Human approval is required after the technical review.':''}`,`implementation-${job.id}`);
     }else if(job.mode==='review'){
-      await this.board.comment(job.taskId,`Independent Codex review:\n${safe(JSON.stringify(result,null,2))}`,`review-${job.id}`);
       const impl=this.state.jobs.find(j=>j.id===job.implementationId);
       const requiredChecks=result.checks.filter(c=>c.required);
-      const accepted=result.accepted&&!result.needsHumanReview&&!needsHuman(task)&&result.findings.length===0&&requiredChecks.length>0&&requiredChecks.every(c=>c.passed)&&job.codeFingerprint===await this.fingerprint(job.workspace,job.reviewPaths);
+      const humanApproval=needsHuman(task)||result.needsHumanReview;
+      const technicalPassed=result.accepted&&result.findings.length===0&&requiredChecks.length>0&&requiredChecks.every(c=>c.passed)&&job.codeFingerprint===await this.fingerprint(job.workspace,job.reviewPaths);
+      const accepted=technicalPassed&&!humanApproval;
+      const outcome=technicalPassed
+        ? (humanApproval?'agent review passed; human approval is still required':'agent review passed; dependencies may continue')
+        : (humanApproval?'review needs attention; human input is required':'review needs attention');
+      await this.board.comment(job.taskId,`Independent Codex review: ${outcome}.\n${safe(JSON.stringify(result,null,2))}`,`review-${job.id}`);
       if(accepted)this.state.acceptance[job.taskId]={taskFingerprint:job.taskFingerprint,codeFingerprint:job.codeFingerprint,reviewPaths:job.reviewPaths,workspace:job.workspace,implementationId:impl.id,reviewJobId:job.id};
-      else if(!result.needsHumanReview&&!needsHuman(task)&&(result.findings.length||requiredChecks.some(c=>!c.passed))){const attempts=this.state.jobs.filter(j=>j.taskId===job.taskId&&j.mode==='implementation').length;if(attempts<3){impl.rework={findings:result.findings,checks:result.checks};impl.reworkPending=true;} }
-      this.enqueueNotification(job.project,`${job.taskId}: ${accepted?'agent review passed; dependencies may continue':'review needs attention'}. ${result.summary}`,`review-${job.id}`);
+      else if(!humanApproval&&(result.findings.length||requiredChecks.some(c=>!c.passed))){const attempts=this.state.jobs.filter(j=>j.taskId===job.taskId&&j.mode==='implementation').length;if(attempts<3){impl.rework={findings:result.findings,checks:result.checks};impl.reworkPending=true;} }
+      this.enqueueNotification(job.project,`${job.taskId}: ${outcome}. ${result.summary}`,`review-${job.id}`);
     }else if(job.mode==='discussion'){await this.board.comment(job.taskId,job.result,`discussion-${job.id}`);}
     job.status='completed';job.parsed=result;job.finishedAt=new Date().toISOString();await this.save();
   }
@@ -216,7 +221,7 @@ export class Controller {
     for(const impl of this.state.jobs.filter(j=>j.status==='completed'&&(j.reviewPending||j.reworkPending))){
       const p=this.registry.get(impl.project);if(this.busy(p.workspace))continue;
       const task=await this.board.get(impl.taskId);
-      if(taskFingerprint(task)!==impl.taskFingerprint||task.status!=='review'||needsHuman(task)){impl.reviewPending=false;impl.reworkPending=false;await this.save();continue;}
+      if(taskFingerprint(task)!==impl.taskFingerprint||task.status!=='review'||task.human){impl.reviewPending=false;impl.reworkPending=false;await this.save();continue;}
       if(impl.reworkPending){
         if(!this.state.jobs.some(j=>j.reworkOf===impl.id)){
           delete this.state.acceptance[impl.taskId];await this.save();
@@ -319,5 +324,5 @@ export class Controller {
     const j=await this.launch(p,'discussion',{task,message},{task,agent:'opencode',metadata:{requestId:request_id,payload}});return this.get(j.id);
   });}
   answer(id,questionId,answers){return this.serialized(async()=>{const j=this.state.jobs.find(j=>j.id===id);if(!j?.pending?.some(q=>q.id===questionId&&q.type==='question'))throw Error('Question does not belong to this job');await this.workers.answer(j,questionId,answers);return this.get(id);});}
-  retryReview(task_id){return this.serialized(async()=>{const t=await this.board.get(task_id);if(t.status!=='review'||needsHuman(t))throw Error('Requires a non-human task in Review');const p=this.registry.get(t.project);if(this.busy(p.workspace))throw Error('Cancel/resolve the active workspace job first');const impl=[...this.state.jobs].reverse().find(j=>j.taskId===task_id&&j.mode==='implementation'&&j.status==='completed');if(!impl||impl.taskFingerprint!==taskFingerprint(t))throw Error('No matching completed implementation');delete this.state.acceptance[task_id];impl.reviewPending=true;for(const prior of this.state.jobs.filter(j=>j.implementationId===impl.id)){prior.implementationIdArchived=prior.implementationId;delete prior.implementationId;}await this.save();return {queuedReview:true,taskId:task_id};});}
+  retryReview(task_id){return this.serialized(async()=>{const t=await this.board.get(task_id);if(t.status!=='review'||t.human)throw Error('Requires an agent-implemented task in Review');const p=this.registry.get(t.project);if(this.busy(p.workspace))throw Error('Cancel/resolve the active workspace job first');const impl=[...this.state.jobs].reverse().find(j=>j.taskId===task_id&&j.mode==='implementation'&&j.status==='completed');if(!impl||impl.taskFingerprint!==taskFingerprint(t))throw Error('No matching completed implementation');delete this.state.acceptance[task_id];impl.reviewPending=true;for(const prior of this.state.jobs.filter(j=>j.implementationId===impl.id)){prior.implementationIdArchived=prior.implementationId;delete prior.implementationId;}await this.save();return {queuedReview:true,taskId:task_id};});}
 }

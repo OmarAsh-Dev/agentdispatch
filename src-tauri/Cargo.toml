@@ -1,6 +1,6 @@
 [package]
 name = "agentdispatch-desktop"
-version = "0.1.1"
+version = "0.1.2"
 description = "Submit and monitor AgentDispatch goals from Windows"
 edition = "2021"
 

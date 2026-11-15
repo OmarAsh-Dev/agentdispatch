@@ -53,7 +53,9 @@ Use a disposable Kanzo project to try the bridge. Replace the slug and the absol
 
 Use `opencode` for the first argument to make OpenCode the initial orchestrator. The initial choice persists until you explicitly run `assign <project> <agent>`. Give each new goal a stable request ID so retries can be recognized.
 
-You can also assign cards yourself with the exact tag `owner:codex` or `owner:opencode`. Moving the card to **Todo** or adding `ready` triggers the readiness checks. The bridge starts work when the workspace, task, and dependencies are ready. After implementation it posts a result and moves the card to **Review**. A passing agent review lets dependencies continue while the card remains in Review. Use `review:human` for acceptance that you want to handle yourself. Cards flagged as Human stay with the user.
+You can also assign cards yourself with the exact tag `owner:codex` or `owner:opencode`. Moving the card to **Todo** or adding `ready` triggers the readiness checks. The bridge starts work when the workspace, task, and dependencies are ready. After implementation it posts a result, moves the card to **Review**, and starts an independent Codex review. An implementer's request for human input goes to the reviewer as context.
+
+A passing technical review lets dependencies continue while the card remains in Review, unless human approval is required. Add `review:human` to get the same technical review and keep dependencies waiting until you mark the card Done. Cards flagged as Human stay with the user.
 
 ## Connect the desktop apps
 

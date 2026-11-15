@@ -99,10 +99,35 @@ test('listener does readiness then implementation, review and dependent dispatch
   await f.controller.tick();assert.ok(f.sent.some(j=>j.taskId==='app#2'&&j.mode==='readiness'));
   assert.ok(!f.tasks.some(t=>t.status==='done'));
 });
-test('human review never invokes reviewer and does not unblock dependencies',async()=>{
+test('an implementer request for human review does not skip independent technical review',async()=>{
   const f=await fixture();await f.controller.tick();f.finish('readiness',{ready:true,reason:'clear'});await f.controller.tick();
   f.finish('implementation',{completed:true,summary:'Needs acceptance',changedFiles:[],checks,needsHumanReview:true});await f.controller.tick();
-  assert.equal(f.sent.filter(j=>j.mode==='review').length,0);assert.equal(f.tasks[0].status,'review');assert.ok(!f.controller.state.acceptance['app#1']);
+  assert.equal(f.sent.filter(j=>j.mode==='review').length,1);
+  f.finish('review',{accepted:true,needsHumanReview:false,summary:'Technically verified',checks,findings:[]});await f.controller.tick();
+  assert.ok(f.controller.state.acceptance['app#1']);
+  assert.equal(f.tasks[0].status,'review');
+});
+test('a review:human card receives technical review but dependencies wait for Done',async()=>{
+  const f=await fixture();f.tasks[0].tags.push('review:human');
+  f.tasks.push({...f.tasks[0],id:2,title:'Dependent',description:'Dependencies: app#1',tags:['owner:codex']});
+  await f.controller.tick();f.finish('readiness',{ready:true,reason:'clear'});await f.controller.tick();
+  f.finish('implementation',{completed:true,summary:'Ready for approval',changedFiles:[],checks,needsHumanReview:true});await f.controller.tick();
+  assert.equal(f.sent.filter(j=>j.mode==='review').length,1);
+  f.finish('review',{accepted:true,needsHumanReview:false,summary:'Technically verified',checks,findings:[]});await f.controller.tick();
+  assert.ok(!f.controller.state.acceptance['app#1']);
+  assert.match(f.comments.find(c=>c.marker.startsWith('review-')).body,/human approval/i);
+  assert.ok(!f.sent.some(j=>j.taskId==='app#2'));
+  f.tasks[0].status='done';
+  await f.controller.tick();
+  assert.ok(f.sent.some(j=>j.taskId==='app#2'&&j.mode==='readiness'));
+});
+test('a partial implementation is reviewed and the reviewer can still require human input',async()=>{
+  const f=await fixture();await f.controller.tick();f.finish('readiness',{ready:true,reason:'clear'});await f.controller.tick();
+  f.finish('implementation',{completed:false,summary:'One check requires credentials',changedFiles:[],checks,needsHumanReview:true});await f.controller.tick();
+  f.finish('review',{accepted:false,needsHumanReview:true,summary:'Waiting for credentials',checks,findings:[]});await f.controller.tick();
+  assert.ok(!f.controller.state.acceptance['app#1']);
+  assert.match(f.comments.find(c=>c.marker.startsWith('review-')).body,/human input is required/i);
+  assert.equal(f.tasks[0].status,'review');
 });
 test('restart and ambiguous sends never launch a second implementation',async()=>{
   const f=await fixture();await f.controller.tick();f.finish('readiness',{ready:true,reason:'clear'});
