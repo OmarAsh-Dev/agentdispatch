@@ -11,7 +11,7 @@ test('a fresh installation uses scoped defaults and protects an existing destina
 }, () => {
   const folder = mkdtempSync(join(tmpdir(), 'kanzo-install-'));
   try {
-    const destination = join(folder, 'Kanzo Bridge');
+    const destination = join(folder, 'AgentDispatch');
     const script = fileURLToPath(new URL('../scripts/install.ps1', import.meta.url));
     const install = (...options) => spawnSync('pwsh.exe', [
       '-NoProfile', '-File', script, '-Destination', destination, ...options,
@@ -29,7 +29,7 @@ test('a fresh installation uses scoped defaults and protects an existing destina
     assert.deepEqual(config.model, { providerID: 'example', modelID: 'example-model' });
     assert.equal(config.accessMode, 'scoped');
     assert.equal(config.openCodeAuth, 'password');
-    assert.ok(existsSync(join(destination, 'kanzo-bridge.cmd')));
+    assert.ok(existsSync(join(destination, 'agentdispatch.cmd')));
     assert.equal(existsSync(join(destination, '.state')), false);
     assert.equal(existsSync(join(destination, '.git')), false);
 

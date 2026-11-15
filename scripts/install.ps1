@@ -1,13 +1,13 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
-    [string]$Destination = (Join-Path $env:LOCALAPPDATA 'KanzoBridge'),
+    [string]$Destination = (Join-Path $env:LOCALAPPDATA 'AgentDispatch'),
     [string]$ProviderId,
     [string]$ModelId
 )
 
 $ErrorActionPreference = 'Stop'
-if (-not $IsWindows) { throw 'Kanzo Bridge requires Windows x64.' }
+if (-not $IsWindows) { throw 'AgentDispatch requires Windows x64.' }
 $node = (Get-Command node.exe -CommandType Application | Select-Object -First 1).Source
 $npm = (Get-Command npm.cmd -CommandType Application | Select-Object -First 1).Source
 & $node -e 'process.exit(process.arch === "x64" && Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)'
@@ -63,7 +63,7 @@ try {
     }
 
     $shim = "@echo off`r`n" + 'node "%~dp0scripts\bridge.mjs" %*' + "`r`n"
-    [IO.File]::WriteAllText((Join-Path $staging 'kanzo-bridge.cmd'), $shim)
+    [IO.File]::WriteAllText((Join-Path $staging 'agentdispatch.cmd'), $shim)
     [IO.Directory]::Move($staging, $installPath)
 } finally {
     if (Test-Path -LiteralPath $staging -PathType Container) {
@@ -76,6 +76,6 @@ try {
     }
 }
 
-Write-Output "Installed Kanzo Bridge at $installPath"
+Write-Output "Installed AgentDispatch at $installPath"
 Write-Output "Review the settings in $installPath\bridge.config.json, then run:"
-Write-Output "& '$($installPath.Replace("'", "''"))\kanzo-bridge.cmd' start"
+Write-Output "& '$($installPath.Replace("'", "''"))\agentdispatch.cmd' start"
