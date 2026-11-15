@@ -17,6 +17,8 @@ Download the Windows x64 setup executable from [GitHub Releases](https://github.
 3. If the project list is empty, expand **Register a project**. Enter the Kanzo project slug, its actual folder, and its orchestrator.
 4. Select the project, write your goal, and click **Submit goal**. Watch for the planned cards in Kanzo. Use **Refresh** to update recent goal states.
 
+If a long-running bridge reports that its connection limit is reached, use **Restart bridge** when Kanzo work is idle. The bridge keeps its registrations and goals on disk.
+
 The desktop setup is unsigned. The [Tauri Windows build instructions](https://v2.tauri.app/distribute/windows-installer/) describe how to build it from source with `npm exec --package=@tauri-apps/cli@2 -- tauri build --bundles nsis`.
 
 ## Install the bridge from a source checkout

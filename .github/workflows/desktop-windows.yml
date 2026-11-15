@@ -46,6 +46,12 @@ jobs:
           $request = @{action='install';root=$bridge;input=@{}} | ConvertTo-Json -Compress
           $request | node $adapter
           if ($LASTEXITCODE -ne 0) { throw 'The bundled bridge installer failed.' }
+          $report = Join-Path $env:RUNNER_TEMP 'agentdispatch-desktop-status.json'
+          $process = Start-Process -FilePath $launcher -ArgumentList "--verify-bridge `"$bridge`" `"$report`"" -WindowStyle Hidden -Wait -PassThru
+          $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if ($process.ExitCode -ne 0 -or -not $result.installed) {
+            throw "The installed executable could not read the bridge: $($result.error)"
+          }
       - uses: actions/upload-artifact@v6
         with:
           name: AgentDispatch-Windows-x64
@@ -57,4 +63,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $setup = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
-          gh release create $env:GITHUB_REF_NAME $setup.FullName --verify-tag --title 'AgentDispatch Desktop 0.1.0' --notes 'Windows x64 desktop app for submitting Kanzo goals. Requires Node.js 24 x64. PowerShell 7 is used in the background for first-time bridge setup. The installer is unsigned.'
+          gh release create $env:GITHUB_REF_NAME $setup.FullName --verify-tag --title "AgentDispatch $env:GITHUB_REF_NAME" --notes 'Windows x64 desktop app for submitting Kanzo goals. Requires Node.js 24 x64. PowerShell 7 is used in the background for first-time bridge setup. The installer is unsigned.'

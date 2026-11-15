@@ -37,7 +37,8 @@ function render() {
   get('model').value = state.model?.modelID || '';
   get('model-form').hidden = !state.installed;
   get('install').disabled = working || state.installed;
-  get('start').disabled = working || !state.installed || state.online;
+  get('start').disabled = working || !state.installed;
+  get('start').textContent = state.online ? 'Restart bridge' : 'Start bridge';
   get('project-form').querySelector('button').disabled = working || !state.online;
   updateWorkspace();
 }
@@ -78,10 +79,15 @@ get('install').onclick = () => perform(async () => {
   show('Bridge installed. Enter your OpenCode model, then start the bridge.');
 }, 'Installing the bridge and its dependencies…');
 get('start').onclick = () => perform(async () => {
-  state = await action('start');
+  const restart = state.online;
+  if (restart && !window.confirm('Restart the local bridge and OpenCode server? This is available when Kanzo work is idle.')) {
+    show('');
+    return;
+  }
+  state = await action(restart ? 'restart' : 'start');
   if (!state.projects.length) get('project-setup').open = true;
-  show('Bridge started.');
-}, 'Starting bridge…');
+  show(restart ? 'Bridge restarted.' : 'Bridge started.');
+}, 'Checking bridge…');
 get('model-form').onsubmit = event => {
   event.preventDefault();
   void perform(async () => {

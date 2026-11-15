@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startBridgeHttp } from '../src/server.mjs';
-import { callDesktopTool } from '../scripts/desktop.mjs';
+import { callDesktopTool } from '../scripts/desktop-client.mjs';
 
 test('desktop goal submissions release their MCP sessions and keep the request ID', async t => {
   const bridge = {
